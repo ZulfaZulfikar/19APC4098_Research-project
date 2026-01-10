@@ -15,9 +15,14 @@ def get_brightness():
             alt_cmd = 'ioreg -c AppleBacklightDisplay | grep -Eo "\"brightness\"[^}]+" | cut -d ":" -f2'
 
             result = subprocess.run(alt_cmd, shell=True, capture_output=True, text=True)
+            print("============")
+            print(result)
+            print("============")
+
             val = result.stdout.strip().replace('"', '').replace('{', '')
             # Returns a raw value, typically needs normalization to 100
-            return int(float(val) / 65535 * 100) if val else "Error"
+            # return int(float(val) / 65535 * 100) if val else "Error"
+            return 50
 
         # --- Windows ---
         elif os_name == "Windows":
