@@ -4,6 +4,7 @@
 # Computer Vision
 opencv-python>=4.8.0
 mediapipe>=0.10.0
+Pillow>=9.0.0  # For image processing in camera view
 
 # GUI Framework (tkinter is included with Python, but listed for clarity)
 # No additional package needed for tkinter

@@ -17,6 +17,11 @@ class SettingsWindow(tk.Toplevel):
         self.geometry("700x600")
         self.configure(bg="#f0f0f0")
         
+        # Load current settings
+        from core.controller import get_monitoring_interval, get_alert_cooldown
+        self.current_interval = get_monitoring_interval()
+        self.current_cooldown = get_alert_cooldown()
+        
         self.create_widgets()
         
     def create_widgets(self):
@@ -52,7 +57,7 @@ class SettingsWindow(tk.Toplevel):
             fg="#2c3e50",
         ).pack(side=tk.LEFT)
         
-        self.interval_var = tk.StringVar(value="5")
+        self.interval_var = tk.StringVar(value=str(self.current_interval))
         interval_entry = tk.Entry(
             interval_frame,
             textvariable=self.interval_var,
@@ -78,7 +83,7 @@ class SettingsWindow(tk.Toplevel):
             fg = "#2c3e50",
         ).pack(side=tk.LEFT)
         
-        self.cooldown_var = tk.StringVar(value="300")
+        self.cooldown_var = tk.StringVar(value=str(self.current_cooldown))
         cooldown_entry = tk.Entry(
             cooldown_frame,
             textvariable=self.cooldown_var,
@@ -171,8 +176,42 @@ class SettingsWindow(tk.Toplevel):
         cancel_btn.pack(side=tk.RIGHT, padx=5)
         
     def save_settings(self):
-        """Save settings (placeholder - can be extended to persist to config file)."""
-        # TODO: Implement settings persistence
-        print(f"Settings saved: Interval={self.interval_var.get()}, Cooldown={self.cooldown_var.get()}")
-        self.destroy()
+        """Save settings to the controller."""
+        import tkinter.messagebox as messagebox
+        
+        try:
+            # Validate and save monitoring interval
+            interval_str = self.interval_var.get().strip()
+            if not interval_str or not interval_str.isdigit():
+                messagebox.showerror("Error", "Monitoring interval must be a positive number.")
+                return
+            
+            interval = int(interval_str)
+            if interval < 1:
+                messagebox.showerror("Error", "Monitoring interval must be at least 1 second.")
+                return
+            
+            # Validate and save alert cooldown
+            cooldown_str = self.cooldown_var.get().strip()
+            if not cooldown_str or not cooldown_str.isdigit():
+                messagebox.showerror("Error", "Alert cooldown must be a positive number.")
+                return
+            
+            cooldown = int(cooldown_str)
+            if cooldown < 0:
+                messagebox.showerror("Error", "Alert cooldown cannot be negative.")
+                return
+            
+            # Save to controller
+            from core.controller import set_monitoring_interval, set_alert_cooldown
+            set_monitoring_interval(interval)
+            set_alert_cooldown(cooldown)
+            
+            messagebox.showinfo("Success", f"Settings saved successfully!\n\nMonitoring Interval: {interval} seconds\nAlert Cooldown: {cooldown} seconds")
+            self.destroy()
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid input: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save settings: {e}")
 

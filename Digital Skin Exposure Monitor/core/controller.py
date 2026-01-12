@@ -16,8 +16,26 @@ from ui.alert_popup import show_alert
 
 # Configuration
 LOG_FILE = "data/exposure_log.csv"
-MONITORING_INTERVAL = 5  # seconds between monitoring cycles
-ALERT_COOLDOWN = 300  # seconds between same alert type (5 minutes)
+MONITORING_INTERVAL = 5  # seconds between monitoring cycles (can be updated via settings)
+ALERT_COOLDOWN = 300  # seconds between same alert type (5 minutes, can be updated via settings)
+
+def get_monitoring_interval():
+    """Get current monitoring interval."""
+    return MONITORING_INTERVAL
+
+def get_alert_cooldown():
+    """Get current alert cooldown."""
+    return ALERT_COOLDOWN
+
+def set_monitoring_interval(seconds):
+    """Set monitoring interval."""
+    global MONITORING_INTERVAL
+    MONITORING_INTERVAL = max(1, int(seconds))  # Minimum 1 second
+
+def set_alert_cooldown(seconds):
+    """Set alert cooldown."""
+    global ALERT_COOLDOWN
+    ALERT_COOLDOWN = max(0, int(seconds))  # Minimum 0 seconds
 
 # Global state
 session_start_time = None
@@ -73,9 +91,14 @@ def monitor():
     duration_min = get_session_duration_minutes()
     distance = get_distance()
     brightness = get_brightness()
+    
+    # Default brightness to 60 if None (for macOS and other systems where detection might fail)
+    if brightness is None:
+        brightness = 60
 
     # Calculate exposure scores
-    blue_score = blue_light_score(brightness, duration_min, distance) if brightness and distance else 0.0
+    # Always calculate even if brightness is 0 or None (the function handles it)
+    blue_score = blue_light_score(brightness, duration_min, distance) if distance else 0.0
     thermal_score_val = thermal_score(duration_min, distance) if distance else 0.0
 
     # Determine risk levels

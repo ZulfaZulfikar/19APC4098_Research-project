@@ -6,6 +6,9 @@ Main GUI dashboard for displaying real-time monitoring metrics.
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+import cv2
+from PIL import Image, ImageTk
+import numpy as np
 
 
 class Dashboard(tk.Tk):
@@ -15,7 +18,7 @@ class Dashboard(tk.Tk):
         super().__init__()
         
         self.title("Digital Skin Exposure Monitor - AI-Driven Tracking System")
-        self.geometry("900x700")
+        self.geometry("1000x750")
         self.configure(bg="#f0f0f0")
         
         # Initialize UI components
@@ -23,6 +26,10 @@ class Dashboard(tk.Tk):
         
         # Current metrics storage
         self.current_data = {}
+        
+        # Camera feed for display
+        self.camera_cap = None
+        self.camera_updating = False
         
     def create_widgets(self):
         """Create and layout all UI widgets."""
@@ -92,10 +99,10 @@ class Dashboard(tk.Tk):
         content_frame = tk.Frame(self, bg="#f0f0f0")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Metrics section
+        # Current Metrics section (matching the sketch)
         metrics_frame = tk.LabelFrame(
             content_frame,
-            text="Current Metrics",
+            text="Current Matrix",
             font=("Arial", 12, "bold"),
             bg="#f0f0f0",
             fg="#2c3e50",
@@ -104,9 +111,13 @@ class Dashboard(tk.Tk):
         )
         metrics_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
         
+        # Left side: Input fields
+        left_frame = tk.Frame(metrics_frame, bg="#f0f0f0")
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
         # Distance metric
         self.create_metric_row(
-            metrics_frame,
+            left_frame,
             "Distance from Screen",
             "distance",
             "cm",
@@ -115,7 +126,7 @@ class Dashboard(tk.Tk):
         
         # Brightness metric
         self.create_metric_row(
-            metrics_frame,
+            left_frame,
             "Screen Brightness",
             "brightness",
             "%",
@@ -124,12 +135,42 @@ class Dashboard(tk.Tk):
         
         # Session duration
         self.create_metric_row(
-            metrics_frame,
+            left_frame,
             "Session Duration",
             "duration_min",
             "min",
             "#95a5a6"
         )
+        
+        # Right side: Camera view
+        right_frame = tk.Frame(metrics_frame, bg="#f0f0f0")
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        
+        camera_label_frame = tk.Label(
+            right_frame,
+            text="Camera View",
+            font=("Arial", 10),
+            bg="#f0f0f0",
+            fg="#2c3e50"
+        )
+        camera_label_frame.pack(pady=(0, 5))
+        
+        # Camera display area
+        self.camera_label = tk.Label(
+            right_frame,
+            text="Initializing camera...",
+            bg="#2c3e50",
+            fg="white",
+            width=40,
+            height=15,
+            font=("Arial", 9),
+            relief=tk.SUNKEN,
+            bd=2
+        )
+        self.camera_label.pack(fill=tk.BOTH, expand=True)
+        
+        # Start camera feed
+        self.start_camera_feed()
         
         # Exposure scores section
         scores_frame = tk.LabelFrame(
@@ -143,9 +184,13 @@ class Dashboard(tk.Tk):
         )
         scores_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
         
+        # Left side: Exposure scores
+        scores_left = tk.Frame(scores_frame, bg="#f0f0f0")
+        scores_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        
         # Blue light score
         self.create_score_row(
-            scores_frame,
+            scores_left,
             "Blue Light Exposure",
             "blue_score",
             "blue_risk",
@@ -154,12 +199,40 @@ class Dashboard(tk.Tk):
         
         # Thermal score
         self.create_score_row(
-            scores_frame,
+            scores_left,
             "Thermal Exposure",
             "thermal_score",
             "thermal_risk",
             "#e74c3c"
         )
+        
+        # Right side: Risk Type
+        risk_type_frame = tk.Frame(scores_frame, bg="#f0f0f0")
+        risk_type_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        
+        risk_type_label_frame = tk.Label(
+            risk_type_frame,
+            text="Risk Type",
+            font=("Arial", 11, "bold"),
+            bg="#f0f0f0",
+            fg="#2c3e50"
+        )
+        risk_type_label_frame.pack(pady=(0, 10))
+        
+        # Overall risk type display
+        self.risk_type_display = tk.Label(
+            risk_type_frame,
+            text="--",
+            font=("Arial", 14, "bold"),
+            bg="#ffffff",
+            fg="#2c3e50",
+            width=15,
+            height=5,
+            relief=tk.SUNKEN,
+            bd=2,
+            anchor=tk.CENTER
+        )
+        self.risk_type_display.pack(fill=tk.BOTH, expand=True)
         
         # Status bar
         status_frame = tk.Frame(self, bg="#34495e", height=40)
@@ -325,6 +398,12 @@ class Dashboard(tk.Tk):
         risk_bg = {"LOW": "#d5f4e6", "MODERATE": "#fef5e7", "HIGH": "#fadbd8"}.get(thermal_risk, "#ecf0f1")
         self.thermal_risk_label.config(text=thermal_risk, fg=risk_color, bg=risk_bg)
         
+        # Calculate and display overall Risk Type (highest risk)
+        overall_risk = self.calculate_overall_risk(blue_risk, thermal_risk)
+        risk_type_color = {"LOW": "#27ae60", "MODERATE": "#f39c12", "HIGH": "#e74c3c"}.get(overall_risk, "#95a5a6")
+        risk_type_bg = {"LOW": "#d5f4e6", "MODERATE": "#fef5e7", "HIGH": "#fadbd8"}.get(overall_risk, "#ecf0f1")
+        self.risk_type_display.config(text=overall_risk, fg=risk_type_color, bg=risk_type_bg)
+        
         # Update status
         if distance and brightness:
             self.status_label.config(text="✓ Monitoring Active")
@@ -333,6 +412,69 @@ class Dashboard(tk.Tk):
         else:
             self.status_label.config(text="⚠ Some sensors unavailable")
             
+    def calculate_overall_risk(self, blue_risk, thermal_risk):
+        """Calculate overall risk type (highest of blue and thermal)."""
+        risk_levels = {"LOW": 1, "MODERATE": 2, "HIGH": 3, "UNKNOWN": 0}
+        blue_level = risk_levels.get(blue_risk, 0)
+        thermal_level = risk_levels.get(thermal_risk, 0)
+        
+        max_level = max(blue_level, thermal_level)
+        if max_level == 3:
+            return "HIGH"
+        elif max_level == 2:
+            return "MODERATE"
+        elif max_level == 1:
+            return "LOW"
+        else:
+            return "UNKNOWN"
+    
+    def start_camera_feed(self):
+        """Start the camera feed update loop."""
+        try:
+            from inputs.distance import initialize_camera
+            self.camera_cap = initialize_camera()
+            if self.camera_cap is None or not self.camera_cap.isOpened():
+                self.camera_label.config(text="Camera not available", fg="white", bg="#2c3e50")
+                return
+            self.update_camera_feed()
+        except Exception as e:
+            self.camera_label.config(text=f"Camera error: {str(e)[:30]}", fg="white", bg="#2c3e50")
+    
+    def update_camera_feed(self):
+        """Update the camera feed display."""
+        try:
+            # Import here to avoid circular imports
+            from inputs.distance import cap
+            
+            if cap is not None and cap.isOpened():
+                ret, frame = cap.read()
+                if ret and frame is not None:
+                    # Resize frame to fit display
+                    frame = cv2.resize(frame, (320, 240))
+                    
+                    # Convert BGR to RGB for display
+                    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    
+                    # Convert to PIL Image and then to PhotoImage
+                    img = Image.fromarray(rgb_frame)
+                    imgtk = ImageTk.PhotoImage(image=img)
+                    
+                    # Update label
+                    self.camera_label.config(image=imgtk, text="", bg="#000000")
+                    self.camera_label.image = imgtk  # Keep a reference
+                else:
+                    self.camera_label.config(text="Camera read failed", fg="white", bg="#2c3e50")
+            else:
+                self.camera_label.config(text="Camera not initialized", fg="white", bg="#2c3e50")
+        except Exception as e:
+            # Silently handle errors to avoid spam
+            pass
+        
+        # Schedule next update
+        if not self.camera_updating:
+            self.camera_updating = True
+        self.after(100, self.update_camera_feed)  # Update every 100ms for smooth feed
+    
     def update_time(self):
         """Update the time label in status bar."""
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -351,6 +493,7 @@ class Dashboard(tk.Tk):
         
     def on_closing(self):
         """Handle window closing event."""
+        self.camera_updating = False
         from core.controller import shutdown
         shutdown()
         self.destroy()

@@ -21,15 +21,20 @@ def thermal_score(duration_min, distance_cm):
     Returns:
         float: Thermal exposure score (0-100)
     """
+    # Convert to float for calculations
+    duration_min = float(duration_min) if duration_min else 0.0
+    
+    # Return 0 if no distance or invalid distance
     if not distance_cm or distance_cm <= 0:
         return 0.0
 
     # Calibration constant (M) based on thermal exposure literature
-    # Adjusted to normalize scores to 0-100 range
-    M = 1.5
+    # Adjusted to produce meaningful values: increased from 1.5 to 3.0 for better visibility
+    M = 3.0
     
     # Closer distance and longer duration increase thermal exposure
-    score = (duration_min / distance_cm) * M
+    # Use max(duration_min, 0.1) to ensure some value is calculated even at start
+    score = (max(duration_min, 0.1) / distance_cm) * M
 
     # Cap score at 100
     return min(100, round(score, 2))

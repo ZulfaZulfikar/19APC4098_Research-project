@@ -26,20 +26,26 @@ def update_system(dashboard):
     This function is called periodically to refresh metrics.
     """
     try:
+        # Get current monitoring interval
+        from core.controller import get_monitoring_interval
+        interval_ms = get_monitoring_interval() * 1000  # Convert to milliseconds
+        
         # Perform monitoring cycle
         data = monitor()
         
         # Update dashboard with new data
         dashboard.update_metrics(data)
         
-        # Schedule next update (every 5 seconds)
-        dashboard.after(5000, update_system, dashboard)
+        # Schedule next update using dynamic interval
+        dashboard.after(interval_ms, update_system, dashboard)
         
     except Exception as e:
         print(f"Error in update cycle: {e}")
         traceback.print_exc()
         # Continue monitoring even if one cycle fails
-        dashboard.after(5000, update_system, dashboard)
+        from core.controller import get_monitoring_interval
+        interval_ms = get_monitoring_interval() * 1000
+        dashboard.after(interval_ms, update_system, dashboard)
 
 
 def main():

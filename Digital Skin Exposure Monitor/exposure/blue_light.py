@@ -20,16 +20,26 @@ def blue_light_score(brightness, duration_min, distance_cm):
     Returns:
         float: Blue light exposure score (0-100)
     """
-    if not brightness or not distance_cm or distance_cm <= 0:
+    # Handle None or invalid brightness - use default of 60% if not available
+    if brightness is None:
+        brightness = 60
+    
+    # Convert to float for calculations
+    brightness = float(brightness) if brightness else 60.0
+    duration_min = float(duration_min) if duration_min else 0.0
+    
+    # Return 0 if no distance or invalid distance
+    if not distance_cm or distance_cm <= 0:
         return 0.0
 
     # Calibration constant (K) based on research literature
-    # Adjusted to normalize scores to 0-100 range
-    K = 0.02
+    # Adjusted to produce meaningful values: increased from 0.02 to 0.5 for better visibility
+    K = 0.5
     
     # Inverse square law: exposure decreases with distance squared
     # Higher brightness and longer duration increase exposure
-    score = ((brightness * duration_min) / (distance_cm ** 2)) * K
+    # Add small epsilon to avoid division issues
+    score = ((brightness * max(duration_min, 0.1)) / (distance_cm ** 2)) * K
 
     # Cap score at 100
     return min(100, round(score, 2))

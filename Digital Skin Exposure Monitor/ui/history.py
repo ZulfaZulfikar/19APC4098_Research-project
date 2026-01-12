@@ -52,7 +52,7 @@ class HistoryView(tk.Toplevel):
         refresh_btn = tk.Button(
             toolbar,
             text="Refresh",
-            command=self.load_data,
+            command=self.clear_all_data,
             bg="#3498db",
             # fg="white",
             fg="#2c3e50",
@@ -163,4 +163,39 @@ class HistoryView(tk.Toplevel):
                         self.tree.set(item, "#0", "")  # Apply color to first column
         except Exception as e:
             print(f"Error loading history: {e}")
+    
+    def clear_all_data(self):
+        """Clear all historical data from the CSV file."""
+        import tkinter.messagebox as messagebox
+        
+        # Ask for confirmation
+        result = messagebox.askyesno(
+            "Clear All Data",
+            "Are you sure you want to clear all historical data? This action cannot be undone.",
+            icon="warning"
+        )
+        
+        if result:
+            try:
+                # Clear the treeview
+                for item in self.tree.get_children():
+                    self.tree.delete(item)
+                
+                # Clear the CSV file but keep the header
+                if os.path.exists(self.log_file):
+                    with open(self.log_file, 'w', newline="") as f:
+                        writer = csv.writer(f)
+                        writer.writerow([
+                            "DateTime",
+                            "Distance_cm",
+                            "Brightness",
+                            "BlueLightScore",
+                            "ThermalScore",
+                            "BlueRisk",
+                            "ThermalRisk"
+                        ])
+                
+                messagebox.showinfo("Success", "All historical data has been cleared.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to clear data: {e}")
 
