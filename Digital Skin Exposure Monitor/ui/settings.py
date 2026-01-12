@@ -14,7 +14,7 @@ class SettingsWindow(tk.Toplevel):
         super().__init__(parent)
         
         self.title("Settings")
-        self.geometry("500x400")
+        self.geometry("700x600")
         self.configure(bg="#f0f0f0")
         
         self.create_widgets()
@@ -48,7 +48,8 @@ class SettingsWindow(tk.Toplevel):
             interval_frame,
             text="Monitoring Interval (seconds):",
             font=("Arial", 11),
-            bg="#f0f0f0"
+            bg="#f0f0f0",
+            fg="#2c3e50",
         ).pack(side=tk.LEFT)
         
         self.interval_var = tk.StringVar(value="5")
@@ -58,6 +59,7 @@ class SettingsWindow(tk.Toplevel):
             width=12,
             font=("Arial", 11),
             bg="#ffffff",
+            fg="#2c3e50",
             relief=tk.SUNKEN,
             bd=1,
             justify=tk.CENTER
@@ -72,7 +74,8 @@ class SettingsWindow(tk.Toplevel):
             cooldown_frame,
             text="Alert Cooldown (seconds):",
             font=("Arial", 11),
-            bg="#f0f0f0"
+            bg="#f0f0f0",
+            fg = "#2c3e50",
         ).pack(side=tk.LEFT)
         
         self.cooldown_var = tk.StringVar(value="300")
@@ -82,6 +85,7 @@ class SettingsWindow(tk.Toplevel):
             width=12,
             font=("Arial", 11),
             bg="#ffffff",
+            fg="#2c3e50",
             relief=tk.SUNKEN,
             bd=1,
             justify=tk.CENTER
@@ -94,6 +98,7 @@ class SettingsWindow(tk.Toplevel):
             text="Information",
             font=("Arial", 10, "bold"),
             bg="#f0f0f0",
+            fg="#2c3e50",
             padx=10,
             pady=10
         )
@@ -136,7 +141,8 @@ class SettingsWindow(tk.Toplevel):
             text="Save",
             command=self.save_settings,
             bg="#27ae60",
-            fg="white",
+            # fg="white",
+            fg="#2c3e50",
             padx=20,
             pady=8,
             font=("Arial", 11),
@@ -152,7 +158,8 @@ class SettingsWindow(tk.Toplevel):
             text="Cancel",
             command=self.destroy,
             bg="#95a5a6",
-            fg="white",
+            # fg="white",
+            fg="#2c3e50",
             padx=20,
             pady=8,
             font=("Arial", 11),
