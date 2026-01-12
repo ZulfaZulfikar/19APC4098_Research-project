@@ -52,7 +52,7 @@ class HistoryView(tk.Toplevel):
         refresh_btn = tk.Button(
             toolbar,
             text="Refresh",
-            command=self.clear_all_data,
+            command=self.load_data,
             bg="#3498db",
             # fg="white",
             fg="#2c3e50",
@@ -64,7 +64,24 @@ class HistoryView(tk.Toplevel):
             activebackground="#2980b9",
             activeforeground="white"
         )
-        refresh_btn.pack(side=tk.LEFT)
+        refresh_btn.pack(side=tk.LEFT, padx=(0, 10))
+
+        clear_btn = tk.Button(
+            toolbar,
+            text="Clear All Data",
+            command=self.clear_all_data,
+            bg="#e74c3c",
+            fg="#2c3e50",
+            padx=15,
+            pady=6,
+            font=("Arial", 10),
+            cursor="hand2",
+            relief=tk.FLAT,
+            activebackground="#c0392b",
+            activeforeground="white"
+        )
+
+        clear_btn.pack(side=tk.LEFT)
         
         # Treeview for data table
         tree_frame = tk.Frame(content_frame)
