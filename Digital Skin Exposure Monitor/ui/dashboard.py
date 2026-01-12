@@ -470,6 +470,9 @@ class Dashboard(tk.Tk):
                     # Resize maintaining aspect ratio
                     frame = cv2.resize(frame, (display_width, display_height))
 
+                    # Mirror the image horizontally (like a mirror)
+                    frame = cv2.flip(frame, 1)
+
                     # Convert BGR to RGB for display
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
