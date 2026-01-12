@@ -239,6 +239,7 @@ class Dashboard(tk.Tk):
             text=label_text + ":",
             font=("Arial", 11),
             bg="#f0f0f0",
+            fg="#2c3e50",
             width=20,
             anchor="w"
         )
