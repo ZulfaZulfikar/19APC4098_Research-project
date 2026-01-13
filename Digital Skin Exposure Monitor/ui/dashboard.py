@@ -150,7 +150,7 @@ class Dashboard(tk.Tk):
         camera_label_frame = tk.Label(
             right_frame,
             text="Camera View",
-            font=("Arial", 10),
+            font=("Arial", 11, "bold"),
             bg="#f0f0f0",
             fg="#2c3e50"
         )
